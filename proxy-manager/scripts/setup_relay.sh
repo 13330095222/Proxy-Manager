@@ -31,14 +31,18 @@ RELAY_PORTS=""
 RELAY_SUMMARY=""
 
 while true; do
-    read -p "$(echo -e "${YELLOW}请输入本机中转监听端口 (例如 10443): ${RESET}")" L_PORT
-    read -p "$(echo -e "${YELLOW}请输入目标落地服务器 IP 或域名: ${RESET}")" R_IP
-    read -p "$(echo -e "${YELLOW}请输入目标落地服务器端口 (例如 443): ${RESET}")" R_PORT
+    read -p "$(echo -e "${YELLOW}请输入本机中转监听端口 (回车默认 10443，输入 q 结束): ${RESET}")" L_PORT
+    [ "$L_PORT" = "q" ] && break
+    L_PORT=${L_PORT:-10443}
 
-    if [ -z "$L_PORT" ] || [ -z "$R_IP" ] || [ -z "$R_PORT" ]; then
-        echo -e "${RED}输入不能为空，请重新填写！${RESET}"
+    read -p "$(echo -e "${YELLOW}请输入目标落地服务器 IP 或域名: ${RESET}")" R_IP
+    if [ -z "$R_IP" ]; then
+        echo -e "${RED}目标 IP 不能为空，请重新填写！${RESET}"
         continue
     fi
+
+    read -p "$(echo -e "${YELLOW}请输入目标落地服务器端口 (回车默认 443): ${RESET}")" R_PORT
+    R_PORT=${R_PORT:-443}
 
     cat << ENDPOINT >> "${REALM_CONF}"
 
@@ -52,10 +56,9 @@ ENDPOINT
     echo -e "${GREEN}-> 已添加规则: 0.0.0.0:${L_PORT} -> ${R_IP}:${R_PORT}${RESET}"
 
     read -p "$(echo -e "${YELLOW}是否继续添加下一条转发规则？ [y/N] (回车结束添加): ${RESET}")" more
-    if [[ ! "$more" =~ ^[Yy]$ ]]; then
-        break
-    fi
+    [[ ! "$more" =~ ^[Yy]$ ]] && break
 done
+
 
 # 2. 识别 CPU 架构并下载最新版 Realm 转发核心
 ARCH=$(uname -m)
